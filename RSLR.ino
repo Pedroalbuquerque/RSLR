@@ -19,10 +19,11 @@
 #include <RH_RF95.h>  //get it here http://lowpowerlab.com/RadioHead_LowPowerLab.zip
 
 //Defining some Radio stuff
-#define FREQUENCY   434 //Match frequency to the hardware version of the radio on your Moteino
+#define FREQUENCY   434 // Match frequency to the hardware version of the radio on your Moteino
 #define LED           9 // Moteinos have LEDs on D9
 #define FLASH_SS      8 // and FLASH SS on D8
-//#define ADAFRUITGPS     // uncomment if you're using Adafruit's Ultimate GPS Breakout
+//#define ADAFRUITGPS   // uncomment if you're using Adafruit's Ultimate GPS Breakout
+#define BUZZER        6 // Connect a buzzer to Digital pin 6
 
 bool LEDstatus = false;
 
@@ -83,6 +84,8 @@ void setup()
 	LEDstatus = true;         // Turn LED ON
 	digitalWrite(LED,LEDstatus); 
 
+	pinMode(BUZZER, OUTPUT); // initiate BUZZER output pin
+	
 	// connect at 115200 so we can read the GPS fast enough and echo without dropping chars
 	Serial.begin(115200);
 	Serial.println("GPS AND TELEMETRY MODULE");
@@ -112,7 +115,7 @@ void setup()
 
 		//*****Set the update rate*****
 		GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
-		// For the parsing code to work nicely and have time to sort thru the data, and
+		// For the parsing code to work nicely and have time to sort through the data, and
 		// print it out we don't suggest using anything higher than 1 Hz
 
 		// Request updates on antenna status, comment out to keep quiet
@@ -176,6 +179,13 @@ void loop()
 			Serial.print("Satellites: "); Serial.println(GPS.satellites);
 			Serial.println();
 		*/
+		}
+		
+		if (GPS.speed < 10)
+		{
+			digitalWrite(BUZZER, HIGH);
+			delay(500);
+			digitalWrite(BUZZER, LOW);
 		}
 
 

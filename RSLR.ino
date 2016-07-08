@@ -20,7 +20,6 @@
 
 //Defining some Radio stuff
 #define FREQUENCY   434 //Match frequency to the hardware version of the radio on your Moteino
-
 #define LED           9 // Moteinos have LEDs on D9
 #define FLASH_SS      8 // and FLASH SS on D8
 
@@ -33,7 +32,7 @@ char nmea[64];
 //Define Struct for Data
 struct Payload
 {
-	char HD[3] = "/*";
+	char HD[3] = "/*"; // Marker definig the start of a data Packet
 	uint8_t hour;
 	uint8_t minute;
 	uint8_t seconds;
@@ -42,12 +41,12 @@ struct Payload
 	uint8_t month;
 	uint8_t year;
 	float groundspeed; // In knots
-	float track; // Course over ground in degrees
+	float track; // Track over ground in degrees
 	float latitude; //ddmm.mmmm
 	char lat; // N/S
 	float longitude; // dddmm.mmmm
 	char lon; // E/W
-	float altitude;	//	MSL Altitude
+	float altitude;	//	MSL Altitude in m
 	uint8_t fixquality; // Same as 3D FIX
 	uint8_t satellites; // Range 0 to 14
 	float HDOP; // Horizontal Dilution of Precision <2.0 is good - https://en.wikipedia.org/wiki/Dilution_of_precision_(GPS) 

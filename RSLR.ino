@@ -13,7 +13,7 @@
 #define GPSECHO  false
 
 
-#include <Adafruit_GPS.h>
+#include <Adafruit_GPS.h> //Get the Adafruit GPS library here: https://github.com/adafruit/Adafruit_GPS/archive/master.zip
 #include <SoftwareSerial.h> //We can't use the Hardware Serial because we need it to update the firmware
 #include <SPI.h> //get it here: https://www.github.com/lowpowerlab/spiflash
 #include <RH_RF95.h>  //get it here http://lowpowerlab.com/RadioHead_LowPowerLab.zip

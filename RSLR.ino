@@ -20,7 +20,6 @@
 
 //Defining some Radio stuff
 #define FREQUENCY   434 //Match frequency to the hardware version of the radio on your Moteino
-#define ACK_TIME    50 // max # of ms to wait for an ack
 
 #ifdef __AVR_ATmega1284P__
 		#define LED           15 // Moteino MEGAs have LEDs on D15

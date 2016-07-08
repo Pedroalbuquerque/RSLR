@@ -60,17 +60,13 @@ Payload Data;
 //Define some variables
 uint32_t timer = millis();
 
-// If you're using a GPS module:
-// Connect the GPS Power pin to 3.3V Pin on Moteino
-// Connect the GPS Ground pin to ground
-// If using software serial:
-//   Connect the GPS TX (transmit) pin to Digital 4
-//   Connect the GPS RX (receive) pin to Digital 3
-
-// If using software serial, keep this line enabled
-// (you can change the pin numbers to match your wiring):
+// ****Initiate GPS module****
+// Connect GPS module to the Following Pins:
+// GPS VCC -> 3.3V Pin on Moteino
+// GPS GND -> GROUND
+// GPS TX  -> Digital pin 4
+// GPS RX  -> Digital pin 3
 SoftwareSerial mySerial(4, 3);
-
 Adafruit_GPS GPS(&mySerial);
 
 

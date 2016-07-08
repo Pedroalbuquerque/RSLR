@@ -58,7 +58,6 @@ struct Payload
 Payload Data;
 
 //Define some variables
-bool promiscuousMode = false; //set to 'true' to sniff all packets on the same network
 uint32_t timer = millis();
 
 // If you're using a GPS module:

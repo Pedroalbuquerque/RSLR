@@ -15,18 +15,11 @@
 
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h> //We can't use the Hardware Serial because we need it to update the firmware
-//#include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
 #include <SPI.h> //get it here: https://www.github.com/lowpowerlab/spiflash
 #include <RH_RF95.h>  //get it here http://lowpowerlab.com/RadioHead_LowPowerLab.zip
 
 //Defining some Radio stuff
-#define NODEID      2    //unique for each node on same network
-#define NMEAID      3
-#define NETWORKID   200  //the same on all nodes that talk to each other
-#define GROUNDSTATION   1
 #define FREQUENCY   434 //Match frequency to the hardware version of the radio on your Moteino
-#define ENCRYPTKEY  "sampleEncryptKey" //exactly the same 16 characters/bytes on all nodes!
-#define IS_RFM69HW  //uncomment only for RFM69HW! Leave out if you have RFM69W!
 #define ACK_TIME    50 // max # of ms to wait for an ack
 
 #ifdef __AVR_ATmega1284P__
@@ -115,13 +108,6 @@ void setup()
 		// Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
 		radio.setFrequency(FREQUENCY);
 		
-		//radio.initialize(FREQUENCY, NODEID, NETWORKID); //Initialize the radio
-		//#ifdef IS_RFM69HW
-	//radio.setHighPower(); //only for RFM69HW!
-		//#endif
-	//radio.encrypt(ENCRYPTKEY);//Turn the radio Encryption ON
-	//radio.promiscuous(promiscuousMode);//Turn the radio Promiscuous mode according to what in the promiscuousMode variable 
-
 	// 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
 	GPS.begin(9600);
 
@@ -244,7 +230,7 @@ void loop()
 		//Serial.print("Size of data package:"); Serial.println(sizeof(Data));
 
 		//Now Send data to base module and wait for ACK
-		//radio.sendWithRetry(GROUNDSTATION, (const void*)(&Data), sizeof(Data), 2, ACK_TIME);
+
 		radio.send( (uint8_t* ) &Data, sizeof(Data));
 		//Serial.println(sizeof(Data));
 		LEDstatus = switchstate(LEDstatus);

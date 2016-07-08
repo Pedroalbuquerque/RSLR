@@ -140,7 +140,8 @@ void loop()
 		//Serial.print("#");
 	// in case you are not using the interrupt above, you'll
 	// need to 'hand query' the GPS, not suggested :(
-	if (!usingInterrupt) {
+	if (!usingInterrupt)
+	{
 		// read data from the GPS in the 'main loop'
 		char c = GPS.read();
 		// if you want to debug, this is a good time to do it!
@@ -226,7 +227,7 @@ void loop()
 
 		//Serial.print("Size of data package:"); Serial.println(sizeof(Data));
 
-		//Now Send data to base module and wait for ACK
+		//Now Send data to base module
 
 		radio.send( (uint8_t* ) &Data, sizeof(Data));
 		//Serial.println(sizeof(Data));

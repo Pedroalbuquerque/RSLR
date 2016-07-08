@@ -33,7 +33,7 @@ char nmea[64];
 //Define Struct for Data
 struct Payload
 {
-	char HD[3] = "/*"; // Marker definig the start of a data Packet
+	char HD[3] = "/*"; // Marker defining the start of a data Packet
 	uint8_t hour;
 	uint8_t minute;
 	uint8_t seconds;
@@ -126,8 +126,11 @@ void setup()
 	useInterrupt(true);
 
 	delay(1000);
-	// Ask for firmware version
-	mySerial.println(PMTK_Q_RELEASE);
+
+#ifdef ADAFRUITGPS
+		// Ask for firmware version
+		mySerial.println(PMTK_Q_RELEASE);
+#endif
 }
 
 

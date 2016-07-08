@@ -1,0 +1,10 @@
+.pioenvs
+.clang_complete
+.gcc-flags.json
+__vm
+.vs
+Img
+.travis*
+*.vcx*
+Release
+*.sln*

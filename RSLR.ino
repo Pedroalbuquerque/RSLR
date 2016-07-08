@@ -21,13 +21,8 @@
 //Defining some Radio stuff
 #define FREQUENCY   434 //Match frequency to the hardware version of the radio on your Moteino
 
-#ifdef __AVR_ATmega1284P__
-		#define LED           15 // Moteino MEGAs have LEDs on D15
-		#define FLASH_SS      23 // and FLASH SS on D23
-#else
-		#define LED           9 // Moteinos have LEDs on D9
-		#define FLASH_SS      8 // and FLASH SS on D8
-#endif
+#define LED           9 // Moteinos have LEDs on D9
+#define FLASH_SS      8 // and FLASH SS on D8
 
 bool LEDstatus = false;
 

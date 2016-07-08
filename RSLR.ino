@@ -70,7 +70,6 @@ SoftwareSerial mySerial(4, 3);
 Adafruit_GPS GPS(&mySerial);
 
 
-
 // this keeps track of whether we're using the interrupt
 // off by default!
 boolean usingInterrupt = false;
@@ -80,20 +79,23 @@ void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
 void setup()
 {
 	pinMode(LED, OUTPUT);     //activate LED output pin
-		LEDstatus = true;         // Turn LED ON
-		digitalWrite(LED,LEDstatus); 
+	LEDstatus = true;         // Turn LED ON
+	digitalWrite(LED,LEDstatus); 
 
 	// connect at 115200 so we can read the GPS fast enough and echo without dropping chars
 	Serial.begin(115200);
 	Serial.println("GPS AND TELEMETRY MODULE");
-		Serial.println(VERSION);
+	Serial.println(VERSION);
 	
 	//Initialize the radio
-		if (!radio.init())
-				Serial.println("init failed");
-		else { Serial.print("init OK - "); Serial.print(FREQUENCY); Serial.print("mhz"); }
-		
-		// Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
+	if (!radio.init())
+		Serial.println("init failed");
+	else 
+	{
+		Serial.print("init OK - ");
+		Serial.print(FREQUENCY); Serial.print("mhz"); 
+	}
+	 // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
 		radio.setFrequency(FREQUENCY);
 		
 	// 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800

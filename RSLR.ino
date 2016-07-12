@@ -89,7 +89,7 @@ void setup()
 	
 	// Connect at 115200 so we can read the GPS fast enough and echo without dropping chars
 	Serial.begin(115200);
-	Serial.println("GPS AND TELEMETRY MODULE");
+	Serial.println F("GPS AND TELEMETRY MODULE");
 	Serial.println(VERSION);
 	
 	// Initialize the radio
@@ -149,7 +149,7 @@ void loop()
 		if (!GPS.parse(GPS.lastNMEA()))   // This also sets the newNMEAreceived() flag to false
 		{
 			return;                         // We can fail to parse a sentence in which case we should just wait for another
-			Serial.println("NMEA not parsed");
+			Serial.println F("NMEA not parsed");
 		}
 
 		if (GPS.fix)
@@ -190,7 +190,7 @@ void loop()
 
 		// Now Send data to base module
 		if (!manager.sendtoWait((uint8_t*)&Data, sizeof(Data), SERVER_ADDRESS))
-			Serial.println F(("Sending Data Packet failed"));
+			Serial.println F("Sending Data Packet failed");
 		delay(500);
 
 		// invert LED status on each packet sent by radio to give visual feedback

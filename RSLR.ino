@@ -15,15 +15,15 @@
 #include <RHReliableDatagram.h> //Get the specially customized RadioHead library for the Moteino here: http://lowpowerlab.com/RadioHead_LowPowerLab.zip
 #include <Adafruit_GPS.h> //Get the Adafruit GPS library here: https://github.com/adafruit/Adafruit_GPS/archive/master.zip
 #include <SoftwareSerial.h> //We can't use the Hardware Serial because we need it to update the firmware
-#include <SPI.h> //get it here: https://www.github.com/lowpowerlab/spiflash
-#include <RH_RF95.h>  //get it here http://lowpowerlab.com/RadioHead_LowPowerLab.zip
+#include <SPI.h> // Get it here: https://www.github.com/lowpowerlab/spiflash
+#include <RH_RF95.h>  // Get it here http://lowpowerlab.com/RadioHead_LowPowerLab.zip
 
 #define CLIENT_ADDRESS 2 // Remote Station ID (This node)
 #define SERVER_ADDRESS 1 // Ground Station ID
 #define FREQUENCY   434 // Match frequency to the hardware version of the radio on your Moteino
 #define LED           9 // Moteinos have LEDs on D9
-#define FLASH_SS      8 // and FLASH SS on D8
-//#define ADAFRUITGPS   // uncomment if you're using Adafruit's Ultimate GPS Breakout
+#define FLASH_SS      8 // And FLASH SS on D8
+//#define ADAFRUITGPS   // Uncomment if you're using Adafruit's Ultimate GPS Breakout
 #define BUZZER        6 // Connect a buzzer to Digital pin 6
 #define BATT_MONITOR A0 // Through 1Meg+470Kohm and 0.1uF cap from battery VCC - this ratio divides the voltage to bring it below 3.3V where it is scaled to a readable range
 #define BATT_FORMULA(reading) reading * 0.00318534 * 1.47
@@ -32,14 +32,14 @@
 bool LEDstatus = false;
 
 // Singleton instance of the radio driver
-RH_RF95 driver; //Initialize the generic radio driver
+RH_RF95 driver; // Initialize the generic radio driver
 
 // Class to manage message delivery and receipt, using the driver declared above
 RHReliableDatagram manager(driver, CLIENT_ADDRESS);
 
 char nmea[64];
 
-//Define Struct for Data
+// Define Struct for Data
 struct Payload
 {
 	char HD[3] = "/*"; // Marker defining the start of a data Packet
@@ -52,7 +52,7 @@ struct Payload
 	uint8_t year;
 	float groundspeed; // In knots
 	float track; // Track over ground in degrees
-	float latitude; //ddmm.mmmm
+	float latitude; // ddmm.mmmm
 	char lat; // N/S
 	float longitude; // dddmm.mmmm
 	char lon; // E/W
@@ -64,11 +64,11 @@ struct Payload
 	float latitudedeg;
 	float longitudedeg;
 	bool fix; // FIX 1/0
-	float bat; // Battery voltage
+	float bat; // Battery Voltage
 };
 Payload Data;
 
-//Define some variables
+// Define some variables
 uint32_t timer = millis();
 
 // ****Initiate GPS module****
@@ -86,18 +86,18 @@ float batteryVolts = 0;
 
 void setup()
 {
-	pinMode(LED, OUTPUT);     //activate LED output pin
+	pinMode(LED, OUTPUT);     // Activate LED output pin
 	LEDstatus = true;         // Turn LED ON
 	digitalWrite(LED,LEDstatus); 
 
-	pinMode(BUZZER, OUTPUT); // initiate BUZZER output pin
+	pinMode(BUZZER, OUTPUT); // Initiate BUZZER output pin
 	
-	// connect at 115200 so we can read the GPS fast enough and echo without dropping chars
+	// Connect at 115200 so we can read the GPS fast enough and echo without dropping chars
 	Serial.begin(115200);
 	Serial.println("GPS AND TELEMETRY MODULE");
 	Serial.println(VERSION);
 	
-	//Initialize the radio
+	// Initialize the radio
 	if (manager.init())
 	{
 		driver.setFrequency(FREQUENCY);
@@ -129,10 +129,6 @@ void setup()
 		//GPS.sendCommand(PGCMD_ANTENNA);
 #endif
 
-
-	// the nice thing about this code is you can have a timer0 interrupt go off
-	// every 1 millisecond, and read data from the GPS for you. that makes the
-	// loop code a heck of a lot easier!
 	useInterrupt(true); // We will use the timer 0 interrupt
 
 	delay(1000);
@@ -151,12 +147,12 @@ void setup()
 void loop()
 {
 		
-	// if a sentence is received, we can check the checksum, parse it...
-		// only sent by radio if new GPS message received
+	// If a sentence is received, we can check the checksum and parse it
+	// Only sent by radio if new GPS message received
 	if (GPS.newNMEAreceived()) {
-		if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
+		if (!GPS.parse(GPS.lastNMEA()))   // This also sets the newNMEAreceived() flag to false
 			{
-					return;                         // we can fail to parse a sentence in which case we should just wait for another
+					return;                         // We can fail to parse a sentence in which case we should just wait for another
 					Serial.println("NMEA not parsed");
 			}
 				
@@ -189,14 +185,13 @@ void loop()
 
 
 
-		//String nmeas(GPS.lastNMEA());
+		// String nmeas(GPS.lastNMEA());
 
-		//Serial.println(nmeas);
+		// Serial.println(nmeas);
 
 
 
-		//fill in the Payload struct with new values
-
+		// Fill in the Payload struct with new values
 		Data.hour = GPS.hour;
 		Data.minute = GPS.minute;
 		Data.seconds = GPS.seconds;
@@ -235,16 +230,16 @@ void loop()
 		Serial.println();
 */
 
-		//Serial.print("Size of data package:"); Serial.println(sizeof(Data));
+		// Serial.print("Size of data package:"); Serial.println(sizeof(Data));
 
-		//Now Send data to base module
-
+		// Now Send data to base module
 		if (!manager.sendtoWait((uint8_t*)&Data, sizeof(Data), SERVER_ADDRESS))
 			Serial.println F(("Sending Data Packet failed"));
 		delay(500);
 
+		// invert LED status on each packet sent by radio to give visual feedback
 		LEDstatus = switchstate(LEDstatus);
-		digitalWrite(LED,LEDstatus);    // invert LED status on each packet sent by radio to give visual feedback
+		digitalWrite(LED,LEDstatus);    
 		//Serial.print("pack Sent:"); Serial.println(sizeof(Data));
 	}  // if nmea received
 		/*
@@ -255,6 +250,7 @@ void loop()
 		}
 		*/
 
+	// Check is the required number of loops are complete to read the Battery voltage again
 	sendLoop++;
 	if (sendLoop >= BATT_CYCLES)
 	{
@@ -281,12 +277,12 @@ void checkBattery()
 SIGNAL(TIMER0_COMPA_vect) 
 {
 		char c = GPS.read();
-		// if you want to debug, this is a good time to do it!
+		// If you want to debug, this is a good time to do it!
 #ifdef UDR0
 		if (GPSECHO)
 				if (c) UDR0 = c;
-		// writing direct to UDR0 is much much faster than Serial.print 
-		// but only one character can be written at a time. 
+		// Writing direct to UDR0 is much much faster than Serial.print 
+		// But only one character can be written at a time. 
 #endif
 }
 
@@ -301,7 +297,6 @@ void useInterrupt(boolean v) {
 }
 
 // *** Switch boolean var state
-
 bool switchstate(bool st)
 {
 		st = !st;

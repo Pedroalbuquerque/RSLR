@@ -99,7 +99,7 @@ void setup()
 	}
 	else
 	{
-		Serial.println F(("init failed"));
+		Serial.println F(("Init failed..."));
 	}
 	// Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
 
@@ -149,7 +149,7 @@ void loop()
 		if (!GPS.parse(GPS.lastNMEA()))   // This also sets the newNMEAreceived() flag to false
 		{
 			return;                         // We can fail to parse a sentence in which case we should just wait for another
-			Serial.println F("NMEA not parsed");
+			Serial.println F("NMEA not parsed!");
 		}
 
 		if (GPS.fix)
@@ -190,7 +190,7 @@ void loop()
 
 		// Now Send data to base module
 		if (!manager.sendtoWait((uint8_t*)&Data, sizeof(Data), SERVER_ADDRESS))
-			Serial.println F("Sending Data Packet failed");
+			Serial.println F("Sending Data Packet failed!");
 		delay(500);
 
 		// invert LED status on each packet sent by radio to give visual feedback

@@ -37,8 +37,6 @@ RH_RF95 driver; // Initialize the generic radio driver
 // Class to manage message delivery and receipt, using the driver declared above
 RHReliableDatagram manager(driver, CLIENT_ADDRESS);
 
-char nmea[64];
-
 // Define Struct for Data
 struct Payload
 {
@@ -67,9 +65,6 @@ struct Payload
 	float bat; // Battery Voltage
 };
 Payload Data;
-
-// Define some variables
-uint32_t timer = millis();
 
 // ****Initiate GPS module****
 // Connect GPS module to the Following Pins:

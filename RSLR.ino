@@ -5,9 +5,9 @@
 // You are free to use/extend this code/library but please abide with the CCSA license:
 // http://creativecommons.org/licenses/by-sa/3.0/
 // **********************************************************************************************************
-// Version LR 0.2 RC01
+// Version LR 0.3 RC01
 
-#define VERSION "RS LR MEGA 0.2 RC01"
+#define VERSION "RS LR MEGA 0.3 RC01"
 // Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
 // Set to 'true' if you want to debug and listen to the raw GPS sentences. 
 #define GPSECHO  false

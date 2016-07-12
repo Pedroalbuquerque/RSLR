@@ -159,21 +159,6 @@ void loop()
 		if (GPS.fix)
 		{
 			digitalWrite(LED, HIGH);
-		/*	
-			Serial.print("Location: ");
-			Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
-			Serial.print(", ");
-			Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
-			Serial.print("Location (in degrees, works with Google Maps): ");
-			Serial.print(GPS.latitudeDegrees, 4);
-			Serial.print(", ");
-			Serial.println(GPS.longitudeDegrees, 4);
-			Serial.print("Speed (knots): "); Serial.println(GPS.speed);
-			Serial.print("Angle: "); Serial.println(GPS.angle);
-			Serial.print("Altitude: "); Serial.println(GPS.altitude);
-			Serial.print("Satellites: "); Serial.println(GPS.satellites);
-			Serial.println();
-		*/
 		}
 		
 		if (GPS.speed < 10)
@@ -182,14 +167,6 @@ void loop()
 			delay(500);
 			digitalWrite(BUZZER, LOW);
 		}
-
-
-
-		// String nmeas(GPS.lastNMEA());
-
-		// Serial.println(nmeas);
-
-
 
 		// Fill in the Payload struct with new values
 		Data.hour = GPS.hour;
@@ -214,23 +191,6 @@ void loop()
 		Data.longitudedeg = GPS.longitudeDegrees;
 		Data.fix = GPS.fix;
 		Data.bat = batteryVolts;
-/*
-		Serial.print("Location: ");
-		Serial.print(Data.latitude, 4); Serial.print(Data.lat);
-		Serial.print(", ");
-		Serial.print(Data.longitude, 4); Serial.println(Data.lon);
-		Serial.print("Location (in degrees, works with Google Maps): ");
-		Serial.print(Data.latitudedeg, 4);
-		Serial.print(", ");
-		Serial.println(Data.longitudedeg, 4);
-		Serial.print("GroundSpeed (knots?): "); Serial.println(Data.groundspeed);
-		Serial.print("Angle: "); Serial.println("n/A");
-		Serial.print("Altitude: "); Serial.println(Data.altitude);
-		Serial.print("Satellites: "); Serial.println(Data.satellites);
-		Serial.println();
-*/
-
-		// Serial.print("Size of data package:"); Serial.println(sizeof(Data));
 
 		// Now Send data to base module
 		if (!manager.sendtoWait((uint8_t*)&Data, sizeof(Data), SERVER_ADDRESS))
@@ -240,15 +200,6 @@ void loop()
 		// invert LED status on each packet sent by radio to give visual feedback
 		LEDstatus = switchstate(LEDstatus);
 		digitalWrite(LED,LEDstatus);    
-		//Serial.print("pack Sent:"); Serial.println(sizeof(Data));
-	}  // if nmea received
-		/*
-		else
-		{
-				char bip[5]="bip!";
-				radio.send((uint8_t *)bip,sizeof(bip));
-		}
-		*/
 
 	// Check is the required number of loops are complete to read the Battery voltage again
 	sendLoop++;

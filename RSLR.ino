@@ -81,12 +81,6 @@ uint32_t timer = millis();
 SoftwareSerial mySerial(4, 3);
 Adafruit_GPS GPS(&mySerial);
 
-
-// this keeps track of whether we're using the interrupt
-// off by default!
-boolean usingInterrupt = false;
-void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
-
 byte cycleCount = BATT_CYCLES;
 byte sendLoop = 0;
 float batteryVolts = 0;
@@ -140,7 +134,7 @@ void setup()
 	// the nice thing about this code is you can have a timer0 interrupt go off
 	// every 1 millisecond, and read data from the GPS for you. that makes the
 	// loop code a heck of a lot easier!
-	useInterrupt(true);
+	useInterrupt(true); // We will use the timer 0 interrupt
 
 	delay(1000);
 
@@ -157,18 +151,7 @@ void setup()
 
 void loop()
 {
-		//Serial.print("#");
-	// in case you are not using the interrupt above, you'll
-	// need to 'hand query' the GPS, not suggested :(
-	if (!usingInterrupt)
-	{
-		// read data from the GPS in the 'main loop'
-		char c = GPS.read();
-		// if you want to debug, this is a good time to do it!
-		if (GPSECHO)
-			if (c) Serial.print(c);
-	}
-
+		
 	// if a sentence is received, we can check the checksum, parse it...
 		// only sent by radio if new GPS message received
 	if (GPS.newNMEAreceived()) {
@@ -285,7 +268,8 @@ void loop()
 // ********  Function definitions **************
 
 // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
-SIGNAL(TIMER0_COMPA_vect) {
+SIGNAL(TIMER0_COMPA_vect) 
+{
 		char c = GPS.read();
 		// if you want to debug, this is a good time to do it!
 #ifdef UDR0
@@ -308,17 +292,12 @@ void checkBattery()
 }
 
 void useInterrupt(boolean v) {
-		if (v) {
+		if (v) 
+		{
 				// Timer0 is already used for millis() - we'll just interrupt somewhere
 				// in the middle and call the "Compare A" function above
 				OCR0A = 0xAF;
 				TIMSK0 |= _BV(OCIE0A);
-				usingInterrupt = true;
-		}
-		else {
-				// do not call the interrupt function COMPA anymore
-				TIMSK0 &= ~_BV(OCIE0A);
-				usingInterrupt = false;
 		}
 }
 

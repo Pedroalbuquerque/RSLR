@@ -18,8 +18,8 @@
 #include <SPI.h> // Get it here: https://www.github.com/lowpowerlab/spiflash
 #include <RH_RF95.h>  // Get it here http://lowpowerlab.com/RadioHead_LowPowerLab.zip
 
-#define CLIENT_ADDRESS 2 // Remote Station ID (This node)
 #define SERVER_ADDRESS 1 // Ground Station ID
+#define CLIENT_ADDRESS 2 // Remote Station ID (This node)
 #define FREQUENCY   434 // Match frequency to the hardware version of the radio on your Moteino
 #define LED           9 // Moteinos have LEDs on D9
 #define FLASH_SS      8 // And FLASH SS on D8

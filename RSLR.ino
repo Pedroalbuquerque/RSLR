@@ -26,6 +26,9 @@
 #define FLASH_SS      8 // and FLASH SS on D8
 //#define ADAFRUITGPS   // uncomment if you're using Adafruit's Ultimate GPS Breakout
 #define BUZZER        6 // Connect a buzzer to Digital pin 6
+#define BATT_MONITOR A0 // Through 1Meg+470Kohm and 0.1uF cap from battery VCC - this ratio divides the voltage to bring it below 3.3V where it is scaled to a readable range
+#define BATT_FORMULA(reading) reading * 0.00318534 * 1.47
+#define BATT_CYCLES 10  // The number of complete transmit loops before another reading is done
 
 bool LEDstatus = false;
 
@@ -62,6 +65,7 @@ struct Payload
 	float latitudedeg;
 	float longitudedeg;
 	bool fix; // FIX 1/0
+	float bat; // Battery voltage
 };
 Payload Data;
 
@@ -83,6 +87,9 @@ Adafruit_GPS GPS(&mySerial);
 boolean usingInterrupt = false;
 void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
 
+byte cycleCount = BATT_CYCLES;
+byte sendLoop = 0;
+float batteryVolts = 0;
 
 void setup()
 {
@@ -141,8 +148,11 @@ void setup()
 		// Ask for firmware version
 		mySerial.println(PMTK_Q_RELEASE);
 #endif
-}
 
+	pinMode(BATT_MONITOR, INPUT);
+	checkBattery(); // Make a first readout of the Battery voltage
+
+}
 
 
 void loop()
@@ -226,6 +236,7 @@ void loop()
 		Data.latitudedeg = GPS.latitudeDegrees;
 		Data.longitudedeg = GPS.longitudeDegrees;
 		Data.fix = GPS.fix;
+		Data.bat = batteryVolts;
 /*
 		Serial.print("Location: ");
 		Serial.print(Data.latitude, 4); Serial.print(Data.lat);
@@ -261,6 +272,13 @@ void loop()
 				radio.send((uint8_t *)bip,sizeof(bip));
 		}
 		*/
+
+	sendLoop++;
+	if (sendLoop >= BATT_CYCLES)
+	{
+		checkBattery();
+		sendLoop = 0;
+	}
 }
 
 
@@ -276,6 +294,17 @@ SIGNAL(TIMER0_COMPA_vect) {
 		// writing direct to UDR0 is much much faster than Serial.print 
 		// but only one character can be written at a time. 
 #endif
+}
+
+void checkBattery()
+{
+	unsigned int reading = 0;
+	for (byte i = 0; i<10; i++)
+		reading += analogRead(BATT_MONITOR);
+
+	batteryVolts = BATT_FORMULA(reading / 10);
+	Serial.print F("Bat value:"); Serial.println(reading);
+	Serial.print F("Bat voltage:"); Serial.println(batteryVolts);
 }
 
 void useInterrupt(boolean v) {

@@ -217,7 +217,6 @@ void checkBattery()
 		reading += analogRead(BATT_MONITOR);
 
 	batteryVolts = BATT_FORMULA(reading / 10);
-	Serial.print F("Bat value:"); Serial.println(reading);
 	Serial.print F("Bat voltage:"); Serial.println(batteryVolts);
 }
 

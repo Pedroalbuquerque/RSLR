@@ -146,21 +146,22 @@ void setup()
 
 void loop()
 {
-		
+
 	// If a sentence is received, we can check the checksum and parse it
 	// Only sent by radio if new GPS message received
-	if (GPS.newNMEAreceived()) {
+	if (GPS.newNMEAreceived())
+	{
 		if (!GPS.parse(GPS.lastNMEA()))   // This also sets the newNMEAreceived() flag to false
-			{
-					return;                         // We can fail to parse a sentence in which case we should just wait for another
-					Serial.println("NMEA not parsed");
-			}
-				
+		{
+			return;                         // We can fail to parse a sentence in which case we should just wait for another
+			Serial.println("NMEA not parsed");
+		}
+
 		if (GPS.fix)
 		{
 			digitalWrite(LED, HIGH);
 		}
-		
+
 		if (GPS.speed < 10)
 		{
 			digitalWrite(BUZZER, HIGH);
@@ -199,14 +200,15 @@ void loop()
 
 		// invert LED status on each packet sent by radio to give visual feedback
 		LEDstatus = switchstate(LEDstatus);
-		digitalWrite(LED,LEDstatus);    
+		digitalWrite(LED, LEDstatus);
 
-	// Check is the required number of loops are complete to read the Battery voltage again
-	sendLoop++;
-	if (sendLoop >= BATT_CYCLES)
-	{
-		checkBattery();
-		sendLoop = 0;
+		// Check is the required number of loops are complete to read the Battery voltage again
+		sendLoop++;
+		if (sendLoop >= BATT_CYCLES)
+		{
+			checkBattery();
+			sendLoop = 0;
+		}
 	}
 }
 
@@ -237,7 +239,8 @@ SIGNAL(TIMER0_COMPA_vect)
 #endif
 }
 
-void useInterrupt(boolean v) {
+void useInterrupt(boolean v) 
+{
 		if (v) 
 		{
 				// Timer0 is already used for millis() - we'll just interrupt somewhere

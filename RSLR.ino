@@ -12,13 +12,15 @@
 // Set to 'true' if you want to debug and listen to the raw GPS sentences. 
 #define GPSECHO  false
 
-
+#include <RHReliableDatagram.h> //Get the specially customized RadioHead library for the Moteino here: http://lowpowerlab.com/RadioHead_LowPowerLab.zip
 #include <Adafruit_GPS.h> //Get the Adafruit GPS library here: https://github.com/adafruit/Adafruit_GPS/archive/master.zip
 #include <SoftwareSerial.h> //We can't use the Hardware Serial because we need it to update the firmware
 #include <SPI.h> //get it here: https://www.github.com/lowpowerlab/spiflash
 #include <RH_RF95.h>  //get it here http://lowpowerlab.com/RadioHead_LowPowerLab.zip
 
 //Defining some Radio stuff
+#define CLIENT_ADDRESS 1
+#define SERVER_ADDRESS 2
 #define FREQUENCY   434 // Match frequency to the hardware version of the radio on your Moteino
 #define LED           9 // Moteinos have LEDs on D9
 #define FLASH_SS      8 // and FLASH SS on D8
@@ -27,7 +29,11 @@
 
 bool LEDstatus = false;
 
-RH_RF95 radio; //Initialize the radio
+// Singleton instance of the radio driver
+RH_RF95 driver; //Initialize the generic radio driver
+
+// Class to manage message delivery and receipt, using the driver declared above
+RHReliableDatagram manager(driver, CLIENT_ADDRESS);
 
 char nmea[64];
 
@@ -92,15 +98,16 @@ void setup()
 	Serial.println(VERSION);
 	
 	//Initialize the radio
-	if (!radio.init())
-		Serial.println("init failed");
-	else 
+	if (manager.init())
 	{
-		Serial.print("init OK - ");
-		Serial.print(FREQUENCY); Serial.print("mhz"); 
+		driver.setFrequency(FREQUENCY);
 	}
-	 // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
-		radio.setFrequency(FREQUENCY);
+	else
+	{
+		Serial.println F(("init failed"));
+	}
+	// Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
+
 		
 	// 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
 	GPS.begin(9600);
@@ -239,8 +246,10 @@ void loop()
 
 		//Now Send data to base module
 
-		radio.send( (uint8_t* ) &Data, sizeof(Data));
-		//Serial.println(sizeof(Data));
+		if (!manager.sendtoWait((uint8_t*)&Data, sizeof(Data), SERVER_ADDRESS))
+			Serial.println F(("Sending Data Packet failed"));
+		delay(500);
+
 		LEDstatus = switchstate(LEDstatus);
 		digitalWrite(LED,LEDstatus);    // invert LED status on each packet sent by radio to give visual feedback
 		//Serial.print("pack Sent:"); Serial.println(sizeof(Data));

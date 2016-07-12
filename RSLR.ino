@@ -267,6 +267,17 @@ void loop()
 
 // ********  Function definitions **************
 
+void checkBattery()
+{
+	unsigned int reading = 0;
+	for (byte i = 0; i<10; i++)
+		reading += analogRead(BATT_MONITOR);
+
+	batteryVolts = BATT_FORMULA(reading / 10);
+	Serial.print F("Bat value:"); Serial.println(reading);
+	Serial.print F("Bat voltage:"); Serial.println(batteryVolts);
+}
+
 // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
 SIGNAL(TIMER0_COMPA_vect) 
 {
@@ -278,17 +289,6 @@ SIGNAL(TIMER0_COMPA_vect)
 		// writing direct to UDR0 is much much faster than Serial.print 
 		// but only one character can be written at a time. 
 #endif
-}
-
-void checkBattery()
-{
-	unsigned int reading = 0;
-	for (byte i = 0; i<10; i++)
-		reading += analogRead(BATT_MONITOR);
-
-	batteryVolts = BATT_FORMULA(reading / 10);
-	Serial.print F("Bat value:"); Serial.println(reading);
-	Serial.print F("Bat voltage:"); Serial.println(batteryVolts);
 }
 
 void useInterrupt(boolean v) {

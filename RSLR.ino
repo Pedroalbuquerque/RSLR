@@ -5,33 +5,39 @@
 // You are free to use/extend this code/library but please abide with the CCSA license:
 // http://creativecommons.org/licenses/by-sa/3.0/
 // **********************************************************************************************************
-// Version LR 0.2 RC01
+// Version LR 0.3 RC01
 
-#define VERSION "RS LR MEGA 0.2 RC01"
+#define VERSION "RS LR MEGA 0.3 RC01"
 // Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
 // Set to 'true' if you want to debug and listen to the raw GPS sentences. 
 #define GPSECHO  false
 
-
+#include <RHReliableDatagram.h> //Get the specially customized RadioHead library for the Moteino here: http://lowpowerlab.com/RadioHead_LowPowerLab.zip
 #include <Adafruit_GPS.h> //Get the Adafruit GPS library here: https://github.com/adafruit/Adafruit_GPS/archive/master.zip
 #include <SoftwareSerial.h> //We can't use the Hardware Serial because we need it to update the firmware
-#include <SPI.h> //get it here: https://www.github.com/lowpowerlab/spiflash
-#include <RH_RF95.h>  //get it here http://lowpowerlab.com/RadioHead_LowPowerLab.zip
+#include <SPI.h> // Get it here: https://www.github.com/lowpowerlab/spiflash
+#include <RH_RF95.h>  // Get it here http://lowpowerlab.com/RadioHead_LowPowerLab.zip
 
-//Defining some Radio stuff
+#define SERVER_ADDRESS 1 // Ground Station ID
+#define CLIENT_ADDRESS 2 // Remote Station ID (This node)
 #define FREQUENCY   434 // Match frequency to the hardware version of the radio on your Moteino
 #define LED           9 // Moteinos have LEDs on D9
-#define FLASH_SS      8 // and FLASH SS on D8
-//#define ADAFRUITGPS   // uncomment if you're using Adafruit's Ultimate GPS Breakout
+#define FLASH_SS      8 // And FLASH SS on D8
+//#define ADAFRUITGPS   // Uncomment if you're using Adafruit's Ultimate GPS Breakout
 #define BUZZER        6 // Connect a buzzer to Digital pin 6
+#define BATT_MONITOR A0 // Through 1Meg+470Kohm and 0.1uF cap from battery VCC - this ratio divides the voltage to bring it below 3.3V where it is scaled to a readable range
+#define BATT_FORMULA(reading) reading * 0.00318534 * 1.47
+#define BATT_CYCLES 10  // The number of complete transmit loops before another reading is done
 
 bool LEDstatus = false;
 
-RH_RF95 radio; //Initialize the radio
+// Singleton instance of the radio driver
+RH_RF95 driver; // Initialize the generic radio driver
 
-char nmea[64];
+// Class to manage message delivery and receipt, using the driver declared above
+RHReliableDatagram manager(driver, CLIENT_ADDRESS);
 
-//Define Struct for Data
+// Define Struct for Data
 struct Payload
 {
 	char HD[3] = "/*"; // Marker defining the start of a data Packet
@@ -44,7 +50,7 @@ struct Payload
 	uint8_t year;
 	float groundspeed; // In knots
 	float track; // Track over ground in degrees
-	float latitude; //ddmm.mmmm
+	float latitude; // ddmm.mmmm
 	char lat; // N/S
 	float longitude; // dddmm.mmmm
 	char lon; // E/W
@@ -56,11 +62,9 @@ struct Payload
 	float latitudedeg;
 	float longitudedeg;
 	bool fix; // FIX 1/0
+	float bat; // Battery Voltage
 };
 Payload Data;
-
-//Define some variables
-uint32_t timer = millis();
 
 // ****Initiate GPS module****
 // Connect GPS module to the Following Pins:
@@ -71,36 +75,34 @@ uint32_t timer = millis();
 SoftwareSerial mySerial(4, 3);
 Adafruit_GPS GPS(&mySerial);
 
-
-// this keeps track of whether we're using the interrupt
-// off by default!
-boolean usingInterrupt = false;
-void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
-
+byte cycleCount = BATT_CYCLES;
+byte sendLoop = 0;
+float batteryVolts = 0;
 
 void setup()
 {
-	pinMode(LED, OUTPUT);     //activate LED output pin
+	pinMode(LED, OUTPUT);     // Activate LED output pin
 	LEDstatus = true;         // Turn LED ON
 	digitalWrite(LED,LEDstatus); 
 
-	pinMode(BUZZER, OUTPUT); // initiate BUZZER output pin
+	pinMode(BUZZER, OUTPUT); // Initiate BUZZER output pin
 	
-	// connect at 115200 so we can read the GPS fast enough and echo without dropping chars
+	// Connect at 115200 so we can read the GPS fast enough and echo without dropping chars
 	Serial.begin(115200);
-	Serial.println("GPS AND TELEMETRY MODULE");
+	Serial.println F("GPS AND TELEMETRY MODULE");
 	Serial.println(VERSION);
 	
-	//Initialize the radio
-	if (!radio.init())
-		Serial.println("init failed");
-	else 
+	// Initialize the radio
+	if (manager.init())
 	{
-		Serial.print("init OK - ");
-		Serial.print(FREQUENCY); Serial.print("mhz"); 
+		driver.setFrequency(FREQUENCY);
 	}
-	 // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
-		radio.setFrequency(FREQUENCY);
+	else
+	{
+		Serial.println F(("Init failed..."));
+	}
+	// Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
+
 		
 	// 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
 	GPS.begin(9600);
@@ -122,11 +124,7 @@ void setup()
 		//GPS.sendCommand(PGCMD_ANTENNA);
 #endif
 
-
-	// the nice thing about this code is you can have a timer0 interrupt go off
-	// every 1 millisecond, and read data from the GPS for you. that makes the
-	// loop code a heck of a lot easier!
-	useInterrupt(true);
+	useInterrupt(true); // We will use the timer 0 interrupt
 
 	delay(1000);
 
@@ -134,53 +132,31 @@ void setup()
 		// Ask for firmware version
 		mySerial.println(PMTK_Q_RELEASE);
 #endif
-}
 
+	pinMode(BATT_MONITOR, INPUT);
+	checkBattery(); // Make a first readout of the Battery voltage
+
+}
 
 
 void loop()
 {
-		//Serial.print("#");
-	// in case you are not using the interrupt above, you'll
-	// need to 'hand query' the GPS, not suggested :(
-	if (!usingInterrupt)
-	{
-		// read data from the GPS in the 'main loop'
-		char c = GPS.read();
-		// if you want to debug, this is a good time to do it!
-		if (GPSECHO)
-			if (c) Serial.print(c);
-	}
 
-	// if a sentence is received, we can check the checksum, parse it...
-		// only sent by radio if new GPS message received
-	if (GPS.newNMEAreceived()) {
-		if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
-			{
-					return;                         // we can fail to parse a sentence in which case we should just wait for another
-					Serial.println("NMEA not parsed");
-			}
-				
+	// If a sentence is received, we can check the checksum and parse it
+	// Only sent by radio if new GPS message received
+	if (GPS.newNMEAreceived())
+	{
+		if (!GPS.parse(GPS.lastNMEA()))   // This also sets the newNMEAreceived() flag to false
+		{
+			return;                         // We can fail to parse a sentence in which case we should just wait for another
+			Serial.println F("NMEA not parsed!");
+		}
+
 		if (GPS.fix)
 		{
 			digitalWrite(LED, HIGH);
-		/*	
-			Serial.print("Location: ");
-			Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
-			Serial.print(", ");
-			Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
-			Serial.print("Location (in degrees, works with Google Maps): ");
-			Serial.print(GPS.latitudeDegrees, 4);
-			Serial.print(", ");
-			Serial.println(GPS.longitudeDegrees, 4);
-			Serial.print("Speed (knots): "); Serial.println(GPS.speed);
-			Serial.print("Angle: "); Serial.println(GPS.angle);
-			Serial.print("Altitude: "); Serial.println(GPS.altitude);
-			Serial.print("Satellites: "); Serial.println(GPS.satellites);
-			Serial.println();
-		*/
 		}
-		
+
 		if (GPS.speed < 10)
 		{
 			digitalWrite(BUZZER, HIGH);
@@ -188,16 +164,7 @@ void loop()
 			digitalWrite(BUZZER, LOW);
 		}
 
-
-
-		//String nmeas(GPS.lastNMEA());
-
-		//Serial.println(nmeas);
-
-
-
-		//fill in the Payload struct with new values
-
+		// Fill in the Payload struct with new values
 		Data.hour = GPS.hour;
 		Data.minute = GPS.minute;
 		Data.seconds = GPS.seconds;
@@ -219,73 +186,65 @@ void loop()
 		Data.latitudedeg = GPS.latitudeDegrees;
 		Data.longitudedeg = GPS.longitudeDegrees;
 		Data.fix = GPS.fix;
-/*
-		Serial.print("Location: ");
-		Serial.print(Data.latitude, 4); Serial.print(Data.lat);
-		Serial.print(", ");
-		Serial.print(Data.longitude, 4); Serial.println(Data.lon);
-		Serial.print("Location (in degrees, works with Google Maps): ");
-		Serial.print(Data.latitudedeg, 4);
-		Serial.print(", ");
-		Serial.println(Data.longitudedeg, 4);
-		Serial.print("GroundSpeed (knots?): "); Serial.println(Data.groundspeed);
-		Serial.print("Angle: "); Serial.println("n/A");
-		Serial.print("Altitude: "); Serial.println(Data.altitude);
-		Serial.print("Satellites: "); Serial.println(Data.satellites);
-		Serial.println();
-*/
+		Data.bat = batteryVolts;
 
-		//Serial.print("Size of data package:"); Serial.println(sizeof(Data));
+		// Now Send data to base module
+		if (!manager.sendtoWait((uint8_t*)&Data, sizeof(Data), SERVER_ADDRESS))
+			Serial.println F("Sending Data Packet failed!");
+		delay(500);
 
-		//Now Send data to base module
-
-		radio.send( (uint8_t* ) &Data, sizeof(Data));
-		//Serial.println(sizeof(Data));
+		// invert LED status on each packet sent by radio to give visual feedback
 		LEDstatus = switchstate(LEDstatus);
-		digitalWrite(LED,LEDstatus);    // invert LED status on each packet sent by radio to give visual feedback
-		//Serial.print("pack Sent:"); Serial.println(sizeof(Data));
-	}  // if nmea received
-		/*
-		else
+		digitalWrite(LED, LEDstatus);
+
+		// Check is the required number of loops are complete to read the Battery voltage again
+		sendLoop++;
+		if (sendLoop >= BATT_CYCLES)
 		{
-				char bip[5]="bip!";
-				radio.send((uint8_t *)bip,sizeof(bip));
+			checkBattery();
+			sendLoop = 0;
 		}
-		*/
+	}
 }
 
 
 // ********  Function definitions **************
 
+void checkBattery()
+{
+	unsigned int reading = 0;
+	for (byte i = 0; i<10; i++)
+		reading += analogRead(BATT_MONITOR);
+
+	batteryVolts = BATT_FORMULA(reading / 10);
+	Serial.print F("Bat voltage:"); Serial.println(batteryVolts);
+}
+
 // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
-SIGNAL(TIMER0_COMPA_vect) {
+SIGNAL(TIMER0_COMPA_vect) 
+{
 		char c = GPS.read();
-		// if you want to debug, this is a good time to do it!
+		// If you want to debug, this is a good time to do it!
 #ifdef UDR0
 		if (GPSECHO)
 				if (c) UDR0 = c;
-		// writing direct to UDR0 is much much faster than Serial.print 
-		// but only one character can be written at a time. 
+		// Writing direct to UDR0 is much much faster than Serial.print 
+		// But only one character can be written at a time. 
 #endif
 }
 
-void useInterrupt(boolean v) {
-		if (v) {
+void useInterrupt(boolean v) 
+{
+		if (v) 
+		{
 				// Timer0 is already used for millis() - we'll just interrupt somewhere
 				// in the middle and call the "Compare A" function above
 				OCR0A = 0xAF;
 				TIMSK0 |= _BV(OCIE0A);
-				usingInterrupt = true;
-		}
-		else {
-				// do not call the interrupt function COMPA anymore
-				TIMSK0 &= ~_BV(OCIE0A);
-				usingInterrupt = false;
 		}
 }
 
 // *** Switch boolean var state
-
 bool switchstate(bool st)
 {
 		st = !st;
